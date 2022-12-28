@@ -38,9 +38,9 @@ class WindowsUnityDetector : UnityDetectorBase() {
             }
 
             val version = PEUtil.getProductVersion(executable)
-            val version2 = PEUtil.getFileVersion(executable)
+
             LOG.info("!_! version= $version")
-            LOG.info("!_! version2= $version2")
+
 
             if(version != null) {
 
@@ -49,11 +49,30 @@ class WindowsUnityDetector : UnityDetectorBase() {
                 yield(temp)
             }
             else {
-                LOG.debug("Cannot get version from $executable")
                 LOG.info("+_+ Cannot get version from $executable")
-                yield(Semver("2019.4.40", Semver.SemverType.LOOSE) to path)
+                //  此时由于无法直接获得编辑器的版本，但是在确认本地有对应的编辑器时，采用截取路径中的版本号的方式获得编辑器版本
+                var findVersion = FindVersionInPath(executable.toString())
+
+                yield(Semver(findVersion, Semver.SemverType.LOOSE) to path)
             }
         }
+    }
+
+    fun FindVersionInPath(strlen:String):String
+    {
+        val arry=strlen.split("\\").toTypedArray()
+        var backstr=""
+        for(item in arry)
+        {
+            if(item.contains("."))
+            {
+                if(item.indexOf(".")!=item.lastIndexOf("."))
+                    backstr= item
+            }
+        }
+        //例如 此时找到了“2019.4.40f1”,再减去“f1”。中文版编辑器是减去“f1c1”，都找“f”即可。
+
+        return backstr.take(backstr.indexOf("f"))
     }
 
     override fun getHintPaths() = sequence {
